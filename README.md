@@ -197,6 +197,35 @@ src/
 - **Native `<select>` inside modals.** The ui-kit `Select` renders its menu as an
   absolutely-positioned element that clips inside a scrolling dialog.
 
+## Deploying alongside the production app
+
+The production RADONaix UI owns `/var/www/radonaix` and deploys with
+`rsync -a --delete`. **Do not deploy this build there** — it would replace the
+live app, and the next production deploy would delete it again.
+
+`deploy/nginx/ra_demo.conf` serves this UI on its own port and web root, sharing
+the same backend and Grafana:
+
+```bash
+cd /opt/ra_demo
+git clone https://github.com/RADONAIX/ra_demo.git .
+node --version                 # must be >= 20.19 (Vite 7)
+npm ci
+npm run build                  # no VITE_ vars — the relative defaults are correct
+
+sudo mkdir -p /var/www/ra_demo
+sudo rsync -a --delete dist/client/ /var/www/ra_demo/
+sudo cp deploy/nginx/ra_demo.conf /etc/nginx/conf.d/
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Production stays on `https://<host>/`; the demo answers on `https://<host>:8443/`.
+
+**The demo talks to the production backend.** Reports, Pipelines, Users, Roles,
+Audit Logs and System Configuration are live — a write in the demo is a write in
+production. Demo with a `viewer` or `analyst` account so the platform's own RBAC
+blocks the write paths.
+
 ## Assistant panel
 
 Case Management includes an assurance assistant in the investigation view. There
