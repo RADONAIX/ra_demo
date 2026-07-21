@@ -2,7 +2,7 @@ import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Cpu, Database, Monitor, Server } from "lucide-react";
+import { Cpu, Database, Monitor, Server, ServerCog } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/monitoring")({ component: MonitoringPage });
@@ -108,9 +108,16 @@ const CATEGORIES: Record<string, MonCategory> = {
       { id: "rs1-system", label: "Report Server 1 · System", uid: SYSTEM_UID, varServer: "rpt-master" },
       { id: "rs1-api", label: "Report Server 1 · API", uid: API_UID },
       { id: "rs-2", label: "Report Server 2" },
-      // ServerOps fleet dashboard — live service status + control across all hosts.
-      { id: "serverops", label: "Server Operations", embed: SERVEROPS_URL },
     ],
+  },
+  // Its own section (like Applications / Databases / Report Servers), embedding the
+  // ServerOps app full-panel — it has its own internal nav, so a single tab (the
+  // tab strip is hidden for single-tab sections).
+  serverops: {
+    title: "Server Operations",
+    description: "Live service status & control across the fleet — powered by ServerOps",
+    icon: ServerCog,
+    tabs: [{ id: "fleet", label: "Fleet", embed: SERVEROPS_URL }],
   },
 };
 
@@ -160,7 +167,9 @@ function MonitoringPage() {
           </div>
         </div>
 
-        {/* Tab strip — the section's dashboards. */}
+        {/* Tab strip — the section's dashboards. Hidden for single-tab sections
+            (e.g. Server Operations, which embeds a full app with its own nav). */}
+        {category.tabs.length > 1 && (
         <div className="px-5 pt-4">
           <div className="inline-flex flex-wrap gap-1 rounded-lg border border-border bg-muted/20 p-1">
             {category.tabs.map((tb) => {
@@ -188,6 +197,7 @@ function MonitoringPage() {
             })}
           </div>
         </div>
+        )}
 
         {/* Embedded Grafana dashboard, or a not-configured placeholder. */}
         <div className="p-5">

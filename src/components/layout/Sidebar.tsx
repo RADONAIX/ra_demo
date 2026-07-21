@@ -18,6 +18,7 @@ import {
   Cpu,
   Database,
   Server,
+  ServerCog,
   // Wrench,  — restore with the Assurance Workbench nav entry below
   Briefcase,
   GitCompareArrows,
@@ -52,6 +53,7 @@ const MONITORING_CHILDREN: { key: string; label: string; icon: typeof LayoutDash
   { key: "applications", label: "Applications", icon: Cpu },
   { key: "databases", label: "Databases", icon: Database },
   { key: "reportservers", label: "Report Servers", icon: Server },
+  { key: "serverops", label: "Server Operations", icon: ServerCog },
 ];
 
 interface NavChild {
