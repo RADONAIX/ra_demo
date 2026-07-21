@@ -154,18 +154,21 @@ function MonitoringPage() {
       />
 
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
-        {/* Section header — icon + title + description. */}
-        <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-border">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="h-10 w-10 shrink-0 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-              <CatIcon className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <h2 className="font-semibold text-foreground leading-tight">{t(category.title)}</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">{t(category.description)}</p>
+        {/* Section header — icon + title + description. Hidden for Server
+            Operations, which embeds a full app that carries its own header. */}
+        {view !== "serverops" && (
+          <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-border">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="h-10 w-10 shrink-0 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                <CatIcon className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <h2 className="font-semibold text-foreground leading-tight">{t(category.title)}</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">{t(category.description)}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Tab strip — the section's dashboards. Hidden for single-tab sections
             (e.g. Server Operations, which embeds a full app with its own nav). */}
