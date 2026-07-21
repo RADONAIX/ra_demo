@@ -202,15 +202,19 @@ function MonitoringPage() {
         </div>
         )}
 
-        {/* Embedded Grafana dashboard, or a not-configured placeholder. */}
-        <div className="p-5">
+        {/* Embedded Grafana dashboard, or a not-configured placeholder. Server
+            Operations has no header/tab strip above it, so it gets tighter
+            padding and a much taller frame — near full-screen. */}
+        <div className={view === "serverops" ? "p-2" : "p-5"}>
           {embedSrc ? (
             <div className="overflow-hidden rounded-xl border border-border bg-card">
               <iframe
                 key={`${view}-${tab.id}`}
                 title={`${tab.embed ? "" : "Grafana — "}${t(tab.label)}`}
                 src={embedSrc}
-                className="h-[calc(100vh-360px)] min-h-[500px] w-full border-0"
+                className={`w-full border-0 min-h-[560px] ${
+                  view === "serverops" ? "h-[calc(100vh-215px)]" : "h-[calc(100vh-360px)]"
+                }`}
               />
             </div>
           ) : (
