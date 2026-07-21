@@ -7,10 +7,14 @@ dist/
 .nitro/
 .tanstack/
 
-# Environment — never commit these
+# Environment — never commit real secrets.
+# .env.production holds only relative base paths (no hosts, no secrets) and is
+# required for a correct production build, so it is committed — same as the
+# production UI repos.
 .env
 .env.*
 !.env.example
+!.env.production
 
 # Editor / OS
 .DS_Store
