@@ -24,3 +24,8 @@ dist/
 
 # Abandoned theme backups kept locally, not part of the app
 *.teal-backup
+
+# The ServerOps monitoring app is a SEPARATE Next.js service that happens to live
+# in this folder. It is deployed on its own (systemd, behind nginx at /serverops/)
+# and its .env holds real SSH credentials — it must never enter this public repo.
+Complete_Monitoring_NoAuth/

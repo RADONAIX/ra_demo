@@ -11,14 +11,22 @@ export const Route = createFileRoute("/monitoring")({ component: MonitoringPage 
 // Override with VITE_GRAFANA_URL if Grafana runs on a different host (e.g. local dev).
 const GRAFANA_URL = import.meta.env.VITE_GRAFANA_URL ?? "/grafana";
 
+// The ServerOps monitoring app (Complete_Monitoring_NoAuth) runs as its own
+// Next.js service, proxied same-origin at /serverops/. Embedded in the Report
+// Servers section as the "Server Operations" tab.
+const SERVEROPS_URL = import.meta.env.VITE_SERVEROPS_URL ?? "/serverops/";
+
 type MonIcon = typeof Cpu;
 interface MonTab {
   id: string;
   label: string;
-  // Grafana dashboard uid for this tab. When unset, the panel shows a
-  // "not configured" placeholder (wire a real uid to embed the dashboard).
+  // Grafana dashboard uid for this tab. When unset (and no `embed`), the panel
+  // shows a "not configured" placeholder.
   uid?: string;
   varServer?: string; // optional `var-server` template value
+  // A ready-made iframe URL to embed instead of a Grafana dashboard (e.g. the
+  // ServerOps app). Takes precedence over `uid`.
+  embed?: string;
 }
 interface MonCategory {
   title: string;
@@ -100,6 +108,8 @@ const CATEGORIES: Record<string, MonCategory> = {
       { id: "rs1-system", label: "Report Server 1 · System", uid: SYSTEM_UID, varServer: "rpt-master" },
       { id: "rs1-api", label: "Report Server 1 · API", uid: API_UID },
       { id: "rs-2", label: "Report Server 2" },
+      // ServerOps fleet dashboard — live service status + control across all hosts.
+      { id: "serverops", label: "Server Operations", embed: SERVEROPS_URL },
     ],
   },
 };
@@ -120,9 +130,13 @@ function MonitoringPage() {
   useEffect(() => { setTabId(category.tabs[0].id); }, [view]);
   const tab = category.tabs.find((x) => x.id === tabId) ?? category.tabs[0];
 
-  const embedSrc = tab.uid
-    ? `${dashUrl(tab.uid)}?kiosk&theme=light&refresh=30s${tab.varServer ? `&var-server=${tab.varServer}` : ""}`
-    : null;
+  // A tab embeds either a ready-made URL (`embed`, e.g. ServerOps) or a Grafana
+  // dashboard (`uid`); anything else falls through to the not-configured panel.
+  const embedSrc = tab.embed
+    ? tab.embed
+    : tab.uid
+      ? `${dashUrl(tab.uid)}?kiosk&theme=light&refresh=30s${tab.varServer ? `&var-server=${tab.varServer}` : ""}`
+      : null;
 
   return (
     <AppShell>
@@ -181,7 +195,7 @@ function MonitoringPage() {
             <div className="overflow-hidden rounded-xl border border-border bg-card">
               <iframe
                 key={`${view}-${tab.id}`}
-                title={`Grafana — ${t(tab.label)}`}
+                title={`${tab.embed ? "" : "Grafana — "}${t(tab.label)}`}
                 src={embedSrc}
                 className="h-[calc(100vh-360px)] min-h-[500px] w-full border-0"
               />

@@ -88,6 +88,11 @@ These call the RADONaix API and reflect real data.
 
 **System Monitoring** (`/monitoring`) is a special case: it embeds Grafana
 dashboards, but its server inventory is currently a static list in the route file.
+Its **Report Servers → Server Operations** tab embeds a separate **ServerOps**
+app (a Next.js service that SSHes into the hosts for live systemd control). That
+app is *not* part of this repo — it runs on its own port (`:3003`) and is proxied
+same-origin at `/serverops/`; the tab iframes `VITE_SERVEROPS_URL` (default
+`/serverops/`). See `deploy/nginx/ra_demo.conf` for the proxy block.
 
 ### Client-side modules
 
