@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Clock, Download, MoreVertical, Plus, Search, Sparkles, UserCheck, UserPlus, UserX, X } from "lucide-react";
+import { CheckCheck, CheckCircle2, Clock, Download, FolderOpen, MoreVertical, Plus, Search, Sparkles, UserCheck, UserPlus, UserX, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -27,15 +27,34 @@ export const Route = createFileRoute("/cases")({ component: CasesPage });
 const isUnassigned = (c: AssuranceCase) => !c.owner.trim();
 const ownerLabel = (c: AssuranceCase) => (isUnassigned(c) ? "Unassigned" : c.owner);
 
-// The four summary tiles. Note these mix two dimensions — assignment and status
-// — so they intentionally overlap and do not sum to the total.
-type CountKey = "unassigned" | "assigned" | "inProgress" | "closed";
+type CountKey = "unassigned" | "assigned" | "open" | "inProgress" | "resolved" | "closed";
 
-const COUNT_TILES: { key: CountKey; label: string; icon: typeof UserX; match: (c: AssuranceCase) => boolean; empty: string }[] = [
+interface Tile {
+  key: CountKey;
+  label: string;
+  icon: typeof UserX;
+  match: (c: AssuranceCase) => boolean;
+  empty: string;
+}
+
+// Cases tab: the list is a mix of owned and unowned, so assignment is the useful
+// axis. These mix two dimensions (assignment + status) and intentionally overlap
+// — they do not sum to the total.
+const ALL_TILES: Tile[] = [
   { key: "unassigned", label: "Unassigned", icon: UserX, match: isUnassigned, empty: "No unassigned cases." },
   { key: "assigned", label: "Assigned", icon: UserCheck, match: (c) => !isUnassigned(c), empty: "No assigned cases." },
   { key: "inProgress", label: "In Progress", icon: Clock, match: (c) => c.status === "In Progress", empty: "No cases in progress." },
   { key: "closed", label: "Closed", icon: CheckCircle2, match: (c) => c.status === "Closed", empty: "No closed cases." },
+];
+
+// Self Assigned tab: everything here is already yours, so assignment is constant
+// (Unassigned would always read 0, Assigned would always equal the total). Show
+// the status lifecycle of your own queue instead — that's what actually varies.
+const SELF_TILES: Tile[] = [
+  { key: "open", label: "Open", icon: FolderOpen, match: (c) => c.status === "Open", empty: "No open cases." },
+  { key: "inProgress", label: "In Progress", icon: Clock, match: (c) => c.status === "In Progress", empty: "No cases in progress." },
+  { key: "resolved", label: "Resolved", icon: CheckCircle2, match: (c) => c.status === "Resolved", empty: "No resolved cases." },
+  { key: "closed", label: "Closed", icon: CheckCheck, match: (c) => c.status === "Closed", empty: "No closed cases." },
 ];
 
 type ColKey = "date" | "reference" | "title" | "origin" | "status" | "action" | "severity" | "owner" | "findingType";
@@ -147,21 +166,24 @@ function CasesPage() {
 
   const scoped = useMemo(() => (tab === "self" ? cases.filter((c) => c.owner === CURRENT_ANALYST) : cases), [cases, tab]);
 
+  // Assignment tiles on the Cases tab; status-lifecycle tiles on Self Assigned.
+  const tiles = tab === "self" ? SELF_TILES : ALL_TILES;
+
   // Counts describe the active tab's scope, so they always match what's below.
   const counts = useMemo(
-    () => Object.fromEntries(COUNT_TILES.map((t) => [t.key, scoped.filter(t.match).length])) as Record<CountKey, number>,
-    [scoped],
+    () => Object.fromEntries(tiles.map((t) => [t.key, scoped.filter(t.match).length])) as Record<CountKey, number>,
+    [scoped, tiles],
   );
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    const tile = COUNT_TILES.find((t) => t.key === countFilter);
+    const tile = tiles.find((t) => t.key === countFilter);
     return scoped.filter((c) => {
       if (tile && !tile.match(c)) return false;
       if (!needle) return true;
       return `${c.reference} ${c.title} ${ownerLabel(c)} ${c.linkedBatch} ${findingLabel(c.findingType)}`.toLowerCase().includes(needle);
     });
-  }, [scoped, q, countFilter]);
+  }, [scoped, q, countFilter, tiles]);
 
   const toggleCount = (key: CountKey) => {
     setCountFilter((cur) => (cur === key ? null : key));
@@ -183,11 +205,6 @@ function CasesPage() {
 
   const exportCsv = () => {
     const cols = COLUMNS.filter((c) => visibleCols.has(c.key));
-  // Prefer the active tile's wording — "No unassigned cases." beats a generic
-  // "No cases match." when the user just clicked that tile.
-  const emptyMessage = q.trim()
-    ? "No cases match."
-    : COUNT_TILES.find((t) => t.key === countFilter)?.empty ?? "No cases match.";
     const rows = [cols.map((c) => c.label), ...sorted.map((r) => cols.map((c) => cellValue(r, c.key)))];
     downloadBlob(new Blob([toCsv(rows)], { type: "text/csv;charset=utf-8" }), "cases.csv");
     toast.success(`Exported ${sorted.length} cases`);
@@ -229,7 +246,7 @@ function CasesPage() {
   // "No cases match." when the user just clicked that tile.
   const emptyMessage = q.trim()
     ? "No cases match."
-    : COUNT_TILES.find((t) => t.key === countFilter)?.empty ?? "No cases match.";
+    : tiles.find((t) => t.key === countFilter)?.empty ?? "No cases match.";
 
   return (
     <AppShell>
@@ -259,7 +276,7 @@ function CasesPage() {
 
       {/* Counts — click to filter the list below */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        {COUNT_TILES.map((t) => (
+        {tiles.map((t) => (
           <StatTile
             key={t.key}
             icon={t.icon}
