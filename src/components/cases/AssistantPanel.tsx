@@ -56,20 +56,21 @@ function reply(question: string, c: AssuranceCase): string {
   const procOnly = c.trace.filter((t) => t.status === "PROC_ONLY").length;
   const ingestion = INGESTION_FINDINGS.includes(c.findingType);
 
+  const total = c.affectedCount.toLocaleString();
   // Which records / subscribers are affected
   if (q.includes("affect") || q.includes("subscriber") || q.includes("customer")) {
-    if (!traceN) return `${c.reference} was raised at file level (${c.linkedBatch}), so there is no subscriber-level list yet — the whole file's content is pending re-ingest.`;
+    if (!traceN) return `${c.reference} affects ${total} records but was raised at file level (${c.linkedBatch}), so there is no subscriber-level list yet — the file is pending re-ingest.`;
     const subs = c.trace.slice(0, 3).map((t) => t.subscriberNum).join(", ");
-    return `${traceN} records are affected on ${c.stream} · ${c.nodeId}. Sample subscribers: ${subs}. The full list with raw vs processed amounts is in the Record Trace tab.`;
+    return `${total} records are affected on ${c.stream} · ${c.nodeId}. Sample subscribers from the reviewed set: ${subs}. The full sample with raw vs processed amounts is in the Record Trace tab.`;
   }
   // Reconciliation / match breakdown
   if (q.includes("breakdown") || q.includes("match") || q.includes("how many") || q.includes("split")) {
-    if (!traceN) return `No record-level breakdown — ${c.reference} is a file-level finding on ${c.linkedBatch}, so there are no matched/unmatched record counts.`;
-    return `Of ${traceN} linked records: ${matched} matched, ${mismatches} amount-mismatch, ${rawOnly} raw-only (present in ${c.stream}, missing downstream), ${procOnly} processed-only. That points to ${rawOnly > mismatches ? "records lost between raw and processed" : "a rating delta rather than dropped records"}.`;
+    if (!traceN) return `No record-level breakdown — ${c.reference} is a file-level finding on ${c.linkedBatch} (${total} records), so there are no per-record match counts.`;
+    return `${total} records are flagged. In the reviewed sample of ${traceN}: ${matched} matched, ${mismatches} amount-mismatch, ${rawOnly} raw-only (present in ${c.stream}, missing downstream), ${procOnly} processed-only. That points to ${rawOnly > mismatches ? "records lost between raw and processed" : "a rating delta rather than dropped records"}.`;
   }
   if (q.includes("analyz") || q.includes("linked record") || q.includes("trace")) {
-    if (!traceN) return `No linked records are attached to ${c.reference}. The finding was raised at file level on batch ${c.linkedBatch}, so there is nothing to trace at record level.`;
-    return `Batch ${c.linkedBatch} (${c.stream} · ${c.nodeId}) carries ${traceN} linked records: ${mismatches} amount mismatches and ${rawOnly} raw-only. Estimated exposure ${fmtMoney(c.estimatedImpact)}. The mismatch spread is consistent — a rating-table drift rather than random loss.`;
+    if (!traceN) return `${c.reference} flags ${total} records on batch ${c.linkedBatch}, but it was raised at file level so there is nothing to trace at record level.`;
+    return `Batch ${c.linkedBatch} (${c.stream} · ${c.nodeId}) flags ${total} records; the reviewed sample of ${traceN} is ${mismatches} amount-mismatch and ${rawOnly} raw-only. Estimated exposure ${fmtMoney(c.estimatedImpact)}. The spread is consistent — a rating-table drift rather than random loss.`;
   }
   if (q.includes("impact") || q.includes("leak") || q.includes("revenue") || q.includes("cost")) {
     return `Estimated revenue at risk for ${c.reference} is ${fmtMoney(c.estimatedImpact)}, derived from the raw-vs-processed delta across the linked records. Treat it as an upper bound until the re-delivery lands.`;

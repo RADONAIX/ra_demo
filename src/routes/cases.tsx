@@ -220,7 +220,7 @@ function CasesPage() {
       origin: "analyst_raised", findingType: form.findingType, severity: form.severity,
       status: "Open", action: "NA", owner: form.owner.trim() || CURRENT_ANALYST,
       stream: form.stream, nodeId: "NODE-1", linkedTxnId: "—", linkedBatch: "—",
-      estimatedImpact: 0, createdAt: now, updatedAt: now,
+      estimatedImpact: 0, affectedCount: 0, createdAt: now, updatedAt: now,
       evidence: null, trace: [], comments: [], savedInsights: [],
     };
     persist([c, ...cases]);
