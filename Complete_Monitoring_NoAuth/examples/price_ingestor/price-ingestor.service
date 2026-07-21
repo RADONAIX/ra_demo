@@ -1,0 +1,21 @@
+# /etc/systemd/system/price-ingestor.service
+# Deploy on the target server so the dashboard can control it via systemctl.
+#   sudo cp price-ingestor.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now price-ingestor
+[Unit]
+Description=Price Ingestor (managed by ServerOps)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ops
+WorkingDirectory=/opt/scripts/price_ingestor
+ExecStart=/opt/scripts/price_ingestor/venv/bin/python /opt/scripts/price_ingestor/ingestor.py
+Restart=always
+RestartSec=3
+# The dashboard's SSH user needs a sudoers rule limited to systemctl on this unit, e.g.:
+#   ops ALL=(root) NOPASSWD: /bin/systemctl start price-ingestor, /bin/systemctl stop price-ingestor, /bin/systemctl restart price-ingestor
+
+[Install]
+WantedBy=multi-user.target

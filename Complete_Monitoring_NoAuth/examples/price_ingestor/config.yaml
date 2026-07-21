@@ -1,0 +1,8 @@
+# Managed by ServerOps Dashboard. Edited values are validated against a JSON schema
+# (see config/servers.json -> srv2.price_ingestor.config.schema) before being written.
+symbols:
+  - BTC-USD
+  - ETH-USD
+interval_seconds: 30
+batch_size: 500
+log_level: INFO
